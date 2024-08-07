@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Route Simulation using Google Map with Polyline and API Key Inputs</title>
+    <style>
+        #map {
+            height: 80vh;
+            width: 100%;
+        }
+        #form-container {
+            margin: 20px;
+        }
+    </style>
+    <script>
+        let map;
+
+        function initMap(apiKey) {
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: { lat: 12, lng: 0 },
+                zoom: 1
+            });
+        }
+
+        function updateMap() {
+            const polyline = document.getElementById('polyline-input').value;
+            const apiKey = document.getElementById('api-key-input').value;
+
+            if (window.polyline) {
+                window.polyline.setMap(null);
+            }
+
+            const map = new google.maps.Map(document.getElementById("map"), {
+                zoom: 1,
+                center: { lat: 12, lng: 0 },
+            });
+
+            const flightPath = new google.maps.Polyline({
+                path: decodePolyline(polyline),
+                geodesic: true,
+                strokeColor: "#FF0000",
+                strokeOpacity: 1.0,
+                strokeWeight: 2,
+            });
+
+           flightPath.setMap(map); 
+        }
+
+        function decodePolyline(encodedString) {
+            let index = 0;
+            let lat = 0;
+            let lng = 0;
+            let coordinates = [];
+
+            while (index < encodedString.length) {
+                let b;
+                let shift = 0;
+                let result = 0;
+                do {
+                b = encodedString.charCodeAt(index++) - 63;
+                result |= (b & 0x1f) << shift;
+                shift += 5;
+                } while (b >= 0x20);
+
+                let dlat = ((result & 1) !== 0 ? ~(result >> 1) : (result >> 1));
+                lat += dlat;
+
+                shift = 0;
+                result = 0;
+                do {
+                b = encodedString.charCodeAt(index++) - 63;
+                result |= (b & 0x1f) << shift;
+                shift += 5;
+                } while (b >= 0x20);
+
+                let dlng = ((result & 1) !== 0 ? ~(result >> 1) : (result >> 1));
+                lng += dlng;
+
+                coordinates.push({lat: lat * 1e-5, lng: lng * 1e-5});
+            }
+
+            return coordinates;
+        }
+
+        function loadMap() {
+            const apiKey = document.getElementById('api-key-input').value;
+            if (apiKey) {
+                const script = document.createElement('script');
+                script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry&callback=initMap`;
+                script.async = true;
+                document.head.appendChild(script);
+            }
+        }
+    </script>
+</head>
+<body>
+    <center>Route Simulation using Google Map with Polyline and API Key Inputs</center>
+    <div id="form-container">
+        <label for="api-key-input">Enter API Key:</label>
+        <input type="text" id="api-key-input" placeholder="Enter Google API KEY here">
+        <button onclick="loadMap()">Load Map</button>
+        <br><br>
+        <label for="polyline-input">Enter Encoded Polyline:</label>
+        <input type="text" id="polyline-input" placeholder="Enter polyline here">
+        <button onclick="updateMap()">Update Map</button>
+    </div>
+    <div id="map"></div>
+</body>
+</html>
